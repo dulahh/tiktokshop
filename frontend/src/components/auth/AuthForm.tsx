@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,14 +25,15 @@ export const AuthForm = ({ onLogin }: AuthFormProps) => {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate(); // ✅ react-router-dom navigation
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     const url = isLogin
-      ? "http://localhost:8000/auth/login"
-      : "http://localhost:8000/auth/signup";
+      ? "https://tiktokshop-3yqf.onrender.com/auth/login"
+      : "https://tiktokshop-3yqf.onrender.com/auth/signup";
 
     const payload = isLogin
       ? { email, password }
@@ -45,17 +47,12 @@ export const AuthForm = ({ onLogin }: AuthFormProps) => {
     try {
       const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Authentication failed");
-      }
+      if (!response.ok) throw new Error(data.detail || "Authentication failed");
 
       if (isLogin) {
         const token = data.access_token;
@@ -69,13 +66,14 @@ export const AuthForm = ({ onLogin }: AuthFormProps) => {
           title: "Welcome back!",
           description: "Successfully logged in to your dashboard.",
         });
+        // window.location.href = "/dashboard";
+        navigate("/dashboard"); // ✅ Redirect after login
       } else {
         toast({
           title: "Account created!",
           description: "You can now log in with your credentials.",
         });
 
-        // Switch to login view
         setIsLogin(true);
         setPassword("");
       }

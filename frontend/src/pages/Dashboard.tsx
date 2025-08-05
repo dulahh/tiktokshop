@@ -41,26 +41,35 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) {
-      window.location.href = "/";
-      return;
-    }
+    // console.log(token,"token")
+    // if (!token) {
+    //   window.location.href = "/";
+    //   return;
+    // }
 
     const fetchData = async () => {
+
+      // alert("This line")
       try {
-        const res = await fetch("http://localhost:8000/dashboard", {
+        const res = await fetch("https://tiktokshop-3yqf.onrender.com/dashboard", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (!res.ok) throw new Error("Failed to load dashboard data");
-
+        
+        // if (!res.ok) throw new Error("Failed to load dashboard data");
+        
         const result: DashboardData = await res.json();
         setData(result);
+        console.log(result,"result")
+
+        setLoading(false)
+
+
       } catch (error) {
         console.error("Error fetching dashboard:", error);
-        navigate("/");
+        // navigate("/");
       } finally {
         setLoading(false);
       }
