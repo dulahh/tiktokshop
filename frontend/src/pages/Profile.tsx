@@ -22,7 +22,7 @@ export default function Profile() {
       </div>
       <div className="max-w-lg mx-auto px-4 py-6">
         <div className="space-y-4">
-          <p className="text-center text-muted-foreground">Profile management coming soon...</p>
+          <p className="text-center text-muted-foreground">Profile</p>
           <Button 
             variant="destructive" 
             onClick={handleLogout}

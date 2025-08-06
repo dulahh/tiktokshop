@@ -1,8 +1,8 @@
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Package, Edit, TrendingUp, TrendingDown } from "lucide-react";
+
+import { Package, TrendingUp, TrendingDown } from "lucide-react";
 
 const productsByCategory = {
   "Electronics": [
@@ -112,13 +112,6 @@ export default function DistributionCenter() {
                         <p className="text-sm font-medium text-primary">${product.price}</p>
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="px-2"
-                    >
-                      <Edit className="w-3 h-3" />
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -130,4 +123,4 @@ export default function DistributionCenter() {
       <BottomNav />
     </div>
   );
-}
+} 

@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
-import { Search, Filter, Plus } from "lucide-react";
+
+import { Search } from "lucide-react";
 
 const categories = ["All", "Electronics", "Fashion", "Home & Kitchen", "Beauty & Personal Care", "Books"];
 
@@ -30,7 +30,7 @@ const products = [
 export default function ProductList() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
+  
 
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
@@ -48,15 +48,6 @@ export default function ProductList() {
               <h1 className="text-2xl font-bold">Products</h1>
               <p className="text-white/80 mt-1">Manage your inventory</p>
             </div>
-            <Button 
-              variant="secondary" 
-              size="sm"
-              onClick={() => navigate("/product/add")}
-              className="bg-white/20 hover:bg-white/30 text-white border-white/20"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add
-            </Button>
           </div>
         </div>
       </div>
@@ -93,8 +84,7 @@ export default function ProductList() {
           {filteredProducts.map((product) => (
             <Card 
               key={product.id} 
-              className="bg-gradient-card border-0 shadow-card hover:shadow-elevated transition-smooth cursor-pointer"
-              onClick={() => navigate(`/product/${product.id}`)}
+              className="bg-gradient-card border-0 shadow-card hover:shadow-elevated transition-smooth"
             >
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
