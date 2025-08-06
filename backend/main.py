@@ -297,7 +297,7 @@ async def get_withdrawal_details(
         created_at=withdrawal.created_at
     )
 
-@app.get("/orders", response_model=List[OrderResponse])
+@app.get("/order", response_model=List[OrderResponse])
 def get_my_orders(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
