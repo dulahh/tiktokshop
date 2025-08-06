@@ -50,7 +50,7 @@ export default function Withdrawal() {
 
     setLoading(true);
     try {
-      const res = await fetch("https://tiktokshop-3yqf.onrender.com/withdraw", {
+      const res = await fetch("https://tiktokshop-1.onrender.com/withdraw", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
