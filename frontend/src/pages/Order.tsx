@@ -16,7 +16,7 @@ type OrderResponse = {
   created_at: string;
 };
 
-const API_BASE_URL = "https://tiktokshop-3yqf.onrender.com"; // use http locally
+const API_BASE_URL = "http://tiktokshop-3yqf.onrender.com"; // use http locally
 
 const fmtUSD = (amount: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
@@ -63,7 +63,7 @@ export default function Order() {
           throw new Error("Not authenticated");
         }
 
-        const res = await fetch(`${API_BASE_URL}/orders`, {
+        const res = await fetch(`${API_BASE_URL}/order`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
