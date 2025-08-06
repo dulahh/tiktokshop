@@ -35,7 +35,8 @@ async def root():
             "signup": "/auth/signup",
             "login": "/auth/login",
             "dashboard": "/dashboard",
-            "withdraw": "/withdraw"
+            "withdraw": "/withdraw",
+            "order": "/order"
         }
     }
 
