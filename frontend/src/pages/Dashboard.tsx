@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from '@/assets/logo.png'; // Adjust the path as necessary
+import logo from '@/assets/logo.png';
 import {
   DollarSign,
   TrendingUp,
@@ -34,22 +34,14 @@ interface DashboardData {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const userName = localStorage.getItem("user-name") || "Business Owner";
   const token = localStorage.getItem("auth-token");
 
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch dashboard data
   useEffect(() => {
-    // console.log(token,"token")
-    // if (!token) {
-    //   window.location.href = "/";
-    //   return;
-    // }
-
     const fetchData = async () => {
-
-      // alert("This line")
       try {
         const res = await fetch("https://tiktokshop-3yqf.onrender.com/dashboard", {
           headers: {
@@ -57,26 +49,42 @@ export default function Dashboard() {
           },
         });
 
-        
-        // if (!res.ok) throw new Error("Failed to load dashboard data");
-        
         const result: DashboardData = await res.json();
         setData(result);
-        console.log(result,"result")
-
-        setLoading(false)
-
-
       } catch (error) {
         console.error("Error fetching dashboard:", error);
-        // navigate("/");
       } finally {
         setLoading(false);
       }
     };
 
+    // First fetch when page loads
     fetchData();
-  }, [token, navigate]);
+
+    // Repeat every 10 minutes
+    const interval = setInterval(fetchData, 600000);
+
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, [token]);
+
+  // Load Tawk.to script
+  useEffect(() => {
+    (window as any).Tawk_API = (window as any).Tawk_API || {};
+    (window as any).Tawk_LoadStart = new Date();
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = "https://embed.tawk.to/6893104ffcd547192ddd9893/1j1v7fe1o";
+    script.charset = "UTF-8";
+    script.setAttribute("crossorigin", "*");
+
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const actionButtons = [
     { icon: Settings, label: "Shop Settings", path: "/shop-settings" },
@@ -116,10 +124,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-gradient-primary text-white p-6 pb-8">
-        <div className="flex items-center justify-center   p-1 rounded-2xl shadow-lg">
-      <img src={logo} alt="Logo" className="w-36 h-auto" />
-      
-    </div>
+        <div className="flex items-center justify-center p-1 rounded-2xl shadow-lg">
+          <img src={logo} alt="Logo" className="w-36 h-auto" />
+        </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-4">
