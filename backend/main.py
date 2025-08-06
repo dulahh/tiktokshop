@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional, List
-from utils.pydantic import UserSignup, UserLogin, APIResponse, Token, UserInfo, DashboardData, WithdrawalRequest, WithdrawalResponse
+from utils.pydantic import UserSignup, UserLogin, APIResponse, Token, UserInfo, DashboardData, WithdrawalRequest, WithdrawalResponse, OrderResponse
 from utils.util import get_db, get_current_user, create_access_token, authenticate_user, generate_transaction_id, get_password_hash
-from models.model import User, Dashboard, Withdrawal
+from models.model import User, Dashboard, Withdrawal, Order
 from dotenv import load_dotenv
 import os
 
@@ -297,11 +297,9 @@ async def get_withdrawal_details(
         created_at=withdrawal.created_at
     )
 
-# Health Check
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "timestamp": datetime.utcnow()}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+@app.get("/orders", response_model=List[OrderResponse])
+def get_my_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return db.query(Order).filter(Order.user_id == current_user.id).all()

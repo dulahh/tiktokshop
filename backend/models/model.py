@@ -19,6 +19,7 @@ class User(Base):
     
     # Relationships
     dashboard = relationship("Dashboard", back_populates="user", uselist=False)
+    orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     withdrawals = relationship("Withdrawal", back_populates="user")
 
 class Dashboard(Base):
@@ -57,3 +58,34 @@ class Withdrawal(Base):
     
     # Relationship
     user = relationship("User", back_populates="withdrawals")
+
+
+
+class Order(Base):
+    __tablename__ = "orders"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    
+    # Core order data
+    order_number = Column(String(40), unique=True, nullable=False, index=True)
+    status = Column(String(20), default="pending")  # pending, paid, shipped, delivered, cancelled, refunded
+    currency = Column(String(5), default="PKR")
+    
+    # Financials
+    subtotal = Column(Float, default=0.0, nullable=False)
+    discount = Column(Float, default=0.0, nullable=False)
+    tax = Column(Float, default=0.0, nullable=False)
+    shipping_fee = Column(Float, default=0.0, nullable=False)
+    total = Column(Float, default=0.0, nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    paid_at = Column(DateTime, nullable=True)
+    fulfilled_at = Column(DateTime, nullable=True)
+    cancelled_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="orders")
+
+    

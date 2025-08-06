@@ -9,6 +9,27 @@ class UserSignup(BaseModel):
     phone_number: str
     password: str
 
+class ChatRequest(BaseModel):
+    message: str
+
+
+class OrderResponse(BaseModel):
+    id: int
+    user_id: int
+    order_number: str
+    status: str
+    subtotal: float
+    discount: float
+    tax: float
+    shipping_fee: float
+    total: float
+    currency: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
 
 class UserLogin(BaseModel):
     email: str
