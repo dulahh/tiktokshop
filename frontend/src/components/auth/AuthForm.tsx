@@ -32,7 +32,7 @@ export const AuthForm = ({ onLogin }: AuthFormProps) => {
     setLoading(true);
 
     const url = isLogin
-      ? "https://tiktokshop-1.onrender.comauth/login"
+      ? "https://tiktokshop-1.onrender.com/auth/login"
       : "https://tiktokshop-1.onrender.com/auth/signup";
 
     const payload = isLogin
