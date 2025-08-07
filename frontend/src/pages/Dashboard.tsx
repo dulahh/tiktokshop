@@ -48,7 +48,7 @@ export default function Dashboard() {
 
     const fetchData = async () => {
       try {
-        const res = await fetch("https://tiktokshop-1.onrender.com/dashboard", {
+        const res = await fetch("https://tiktokshop-yro8.onrender.com/dashboard", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
