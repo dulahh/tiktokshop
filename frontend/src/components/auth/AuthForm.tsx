@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import {
   Card,
   CardContent,
@@ -27,6 +26,22 @@ export const AuthForm = ({ onLogin }: AuthFormProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate(); // ✅ react-router-dom navigation
+
+useEffect(() => {
+  const script = document.createElement("script");
+  script.src = "https://embed.tawk.to/6893104ffcd547192ddd9893/1j1v7fe1o";
+  script.async = true;
+  script.charset = "UTF-8";
+  script.setAttribute("crossorigin", "*");
+  document.body.appendChild(script);
+
+  return () => {
+    // Optional cleanup if needed
+    document.body.removeChild(script);
+  };
+}, []);
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
