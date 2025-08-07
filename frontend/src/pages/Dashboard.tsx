@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from '@/assets/logo.png';
+import logo from "@/assets/logo.png";
 import {
   DollarSign,
   TrendingUp,
@@ -39,8 +39,13 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch dashboard data
   useEffect(() => {
+    if (!token) {
+      console.warn("No token found");
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const res = await fetch("https://tiktokshop-1.onrender.com/dashboard", {
@@ -49,27 +54,53 @@ export default function Dashboard() {
           },
         });
 
+        if (!res.ok) {
+          throw new Error(`Failed to fetch dashboard: ${res.status}`);
+        }
+
         const result: DashboardData = await res.json();
         setData(result);
+        localStorage.setItem("dashboard-data", JSON.stringify(result));
+        localStorage.setItem("dashboard-timestamp", Date.now().toString());
       } catch (error) {
         console.error("Error fetching dashboard:", error);
+        setData(null);
       } finally {
         setLoading(false);
       }
     };
 
-    // First fetch when page loads
-    fetchData();
+    const cachedData = localStorage.getItem("dashboard-data");
+    const cachedTimestamp = localStorage.getItem("dashboard-timestamp");
+    const TEN_MINUTES = 10 * 60 * 1000;
 
-    // Repeat every 10 minutes
-    const interval = setInterval(fetchData, 600000);
+    if (cachedData && cachedTimestamp) {
+      const age = Date.now() - parseInt(cachedTimestamp, 10);
+      if (age < TEN_MINUTES) {
+        try {
+          const parsed = JSON.parse(cachedData);
+          if (parsed && typeof parsed === "object") {
+            setData(parsed);
+            setLoading(false);
+          } else {
+            fetchData();
+          }
+        } catch {
+          fetchData();
+        }
+      } else {
+        fetchData();
+      }
+    } else {
+      fetchData();
+    }
 
-    // Cleanup on unmount
+    const interval = setInterval(fetchData, TEN_MINUTES);
     return () => clearInterval(interval);
   }, [token]);
 
-  // Load Tawk.to script
   useEffect(() => {
+    
     (window as any).Tawk_API = (window as any).Tawk_API || {};
     (window as any).Tawk_LoadStart = new Date();
 
@@ -80,10 +111,7 @@ export default function Dashboard() {
     script.setAttribute("crossorigin", "*");
 
     document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
+    return () => document.body.removeChild(script);
   }, []);
 
   const actionButtons = [
@@ -122,7 +150,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <div className="bg-gradient-primary text-white p-6 pb-8">
         <div className="flex items-center justify-center p-1 rounded-2xl shadow-lg">
           <img src={logo} alt="Logo" className="w-36 h-auto" />
@@ -130,7 +157,6 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-4">
-        {/* Top Metrics Grid */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {metrics.slice(0, 4).map((metric, index) => (
             <MetricsCard
@@ -142,7 +168,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Additional Metrics */}
         <div className="grid grid-cols-1 gap-3 mb-6">
           {metrics.slice(4).map((metric, index) => (
             <MetricsCard
@@ -154,7 +179,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Action Buttons Grid */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-4 text-foreground">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
@@ -169,7 +193,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Sales Chart */}
         <div className="mb-6">
           <SalesChart />
         </div>
