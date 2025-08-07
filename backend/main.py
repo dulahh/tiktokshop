@@ -43,45 +43,46 @@ async def root():
 # Authentication Routes
 @app.post("/auth/signup", response_model=APIResponse)
 async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
-    # Check if username or email already exists
+    # Check if user already exists
     existing_user = db.query(User).filter(
         (User.username == user_data.username) | (User.email == user_data.email)
     ).first()
-    
+
     if existing_user:
         raise HTTPException(
             status_code=400,
             detail="Username or email already registered"
         )
-    
-    # Create new user
-    hashed_password = get_password_hash(user_data.password)
+
+    # Store password as plain text — for testing only
     db_user = User(
         username=user_data.username,
         email=user_data.email,
         phone_number=user_data.phone_number,
-        hashed_password=hashed_password
+        hashed_password=user_data.password  # <-- Not hashed!
     )
-    
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    
-    # Create dashboard for the new user
+
+    # Create dashboard entry
     dashboard = Dashboard(user_id=db_user.id)
     db.add(dashboard)
     db.commit()
-    
+
     return APIResponse(
         success=True,
-        message="User registered successfully",
+        message="User registered (with plain password)",
         data={"user_id": db_user.id, "username": db_user.username}
     )
 
 @app.post("/auth/login", response_model=Token)
 async def login(login_data: UserLogin, db: Session = Depends(get_db)):
-    user = authenticate_user(db, login_data.email, login_data.password)
-    if not user:
+    user = db.query(User).filter(User.email == login_data.email).first()
+
+    # Compare plain password directly (only for testing!)
+    if not user or user.hashed_password != login_data.password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -90,10 +91,10 @@ async def login(login_data: UserLogin, db: Session = Depends(get_db)):
 
     access_token_expires = timedelta(minutes=1440)
     access_token = create_access_token(
-        data={"sub": user.username}, 
+        data={"sub": user.username},
         expires_delta=access_token_expires
     )
-    
+
     return Token(
         access_token=access_token,
         token_type="bearer",
