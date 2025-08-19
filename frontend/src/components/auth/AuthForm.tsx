@@ -48,8 +48,8 @@ useEffect(() => {
     setLoading(true);
 
     const url = isLogin
-      ? "https://tiktokshop-yro8.onrender.com/auth/login"
-      : "https://tiktokshop-yro8.onrender.com/auth/signup";
+      ? "http://195.35.28.13:8000/auth/login"
+      : "http://195.35.28.13:8000/auth/signup";
 
     const payload = isLogin
       ? { email, password }

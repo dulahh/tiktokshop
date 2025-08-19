@@ -1,4 +1,3 @@
-
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +10,15 @@ import { useState } from "react";
 export default function ShopSettings() {
   const navigate = useNavigate();
   const [performanceMode, setPerformanceMode] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleSave = () => {
-    // Handle save settings here
+    // Simulate saving settings
     console.log({ performanceMode });
+    setSuccessMessage("Settings saved successfully!");
+    
+    // Optionally, clear the success message after 3 seconds
+    setTimeout(() => setSuccessMessage(""), 3000);
   };
 
   return (
@@ -71,6 +75,10 @@ export default function ShopSettings() {
             >
               Save Settings
             </Button>
+
+            {successMessage && (
+              <p className="text-green-600 font-medium mt-2">{successMessage}</p>
+            )}
           </CardContent>
         </Card>
       </div>
