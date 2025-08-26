@@ -15,6 +15,11 @@ app = FastAPI()
 
 secret_key = os.getenv("SECRET_KEY")
 
+class TokenWithUser(Token):
+    user_id: int
+    username: str
+    email: str
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,11 +82,10 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
         data={"user_id": db_user.id, "username": db_user.username}
     )
 
-@app.post("/auth/login", response_model=Token)
+@app.post("/auth/login", response_model=TokenWithUser)
 async def login(login_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email).first()
 
-    # Compare plain password directly (only for testing!)
     if not user or user.hashed_password != login_data.password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -95,10 +99,13 @@ async def login(login_data: UserLogin, db: Session = Depends(get_db)):
         expires_delta=access_token_expires
     )
 
-    return Token(
+    return TokenWithUser(
         access_token=access_token,
         token_type="bearer",
-        expires_in=1440 * 60
+        expires_in=1440 * 60,
+        user_id=user.id,
+        username=user.username,
+        email=user.email
     )
 
 # User Profile Route

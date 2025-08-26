@@ -64,12 +64,15 @@ def get_current_user(
     )
     
     try:
+        SECRET_KEY = os.getenv("SECRET_KEY")
         # payload = jwt.decode(credentials.token, SECRET_KEY, algorithms=[ALGORITHM])
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        print("Decoded payload:", payload)
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
     except JWTError:
+        print(credentials_exception)
         raise credentials_exception
     
     user = db.query(User).filter(User.username == username).first()

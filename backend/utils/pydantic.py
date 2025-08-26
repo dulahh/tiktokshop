@@ -66,6 +66,8 @@ class WithdrawalRequest(BaseModel):
     amount: float
     currency: str = "PKR"
 
+
+
 class WithdrawalResponse(BaseModel):
     id: int
     method: str
