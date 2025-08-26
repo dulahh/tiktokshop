@@ -34,73 +34,98 @@ interface DashboardData {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const token = localStorage.getItem("auth-token");
-
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isStale, setIsStale] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      console.warn("No token found");
-      setLoading(false);
+  const token = localStorage.getItem("auth-token");
+  if (!token) {
+    navigate("/login");
+    return;
+  }
+
+  // JWT expiration check
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (Date.now() >= payload.exp * 1000) {
+      console.warn("Token expired, redirecting to login...");
+      localStorage.removeItem("auth-token");
+      navigate("/login");
       return;
     }
+  } catch (err) {
+    console.error("Invalid token, redirecting to login", err);
+    localStorage.removeItem("auth-token");
+    navigate("/login");
+    return;
+  }
 
-    const fetchData = async () => {
-      try {
-        const res = await fetch("http://195.35.28.13:8000/dashboard", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  const TEN_MINUTES = 10 * 60 * 1000;
 
-        if (!res.ok) {
-          throw new Error(`Failed to fetch dashboard: ${res.status}`);
-        }
+  // Load cached data first
+  const cachedData = localStorage.getItem("dashboard-data");
+  const cachedTimestamp = localStorage.getItem("dashboard-timestamp");
 
-        const result: DashboardData = await res.json();
-        setData(result);
-        localStorage.setItem("dashboard-data", JSON.stringify(result));
-        localStorage.setItem("dashboard-timestamp", Date.now().toString());
-      } catch (error) {
-        console.error("Error fetching dashboard:", error);
-        setData(null);
-      } finally {
+  if (cachedData && cachedTimestamp) {
+    try {
+      const parsed = JSON.parse(cachedData);
+      if (parsed && typeof parsed === "object") {
+        setData(parsed);
         setLoading(false);
-      }
-    };
 
-    const cachedData = localStorage.getItem("dashboard-data");
-    const cachedTimestamp = localStorage.getItem("dashboard-timestamp");
-    const TEN_MINUTES = 10 * 60 * 1000;
-
-    if (cachedData && cachedTimestamp) {
-      const age = Date.now() - parseInt(cachedTimestamp, 10);
-      if (age < TEN_MINUTES) {
-        try {
-          const parsed = JSON.parse(cachedData);
-          if (parsed && typeof parsed === "object") {
-            setData(parsed);
-            setLoading(false);
-          } else {
-            fetchData();
-          }
-        } catch {
-          fetchData();
-        }
-      } else {
-        fetchData();
+        const age = Date.now() - parseInt(cachedTimestamp, 10);
+        if (age > TEN_MINUTES) setIsStale(true);
       }
-    } else {
-      fetchData();
+    } catch {
+      // ignore parsing errors
     }
+  }
 
-    const interval = setInterval(fetchData, TEN_MINUTES);
-    return () => clearInterval(interval);
-  }, [token]);
+  // ✅ Fetch fresh dashboard data
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("auth-token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
 
+      const res = await fetch("http://localhost:8000/dashboard", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          console.warn("Unauthorized, redirecting to login...");
+          localStorage.removeItem("auth-token");
+          navigate("/login");
+          return;
+        }
+        throw new Error(`Failed to fetch dashboard: ${res.status}`);
+      }
+
+      const result: DashboardData = await res.json();
+      setData(result);
+      localStorage.setItem("dashboard-data", JSON.stringify(result));
+      localStorage.setItem("dashboard-timestamp", Date.now().toString());
+      setIsStale(false);
+    } catch (err) {
+      console.error("Error fetching dashboard:", err);
+      if (!cachedData) setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [navigate]);
+
+  // Tawk.to chat script
   useEffect(() => {
-    
     (window as any).Tawk_API = (window as any).Tawk_API || {};
     (window as any).Tawk_LoadStart = new Date();
 
@@ -157,25 +182,21 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-4">
+        {isStale && (
+          <div className="text-sm text-yellow-600 mb-2 text-center">
+            Displaying cached data, may be outdated.
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3 mb-6">
           {metrics.slice(0, 4).map((metric, index) => (
-            <MetricsCard
-              key={index}
-              title={metric.title}
-              value={metric.value}
-              icon={metric.icon}
-            />
+            <MetricsCard key={index} title={metric.title} value={metric.value} icon={metric.icon} />
           ))}
         </div>
 
         <div className="grid grid-cols-1 gap-3 mb-6">
           {metrics.slice(4).map((metric, index) => (
-            <MetricsCard
-              key={index + 4}
-              title={metric.title}
-              value={metric.value}
-              icon={metric.icon}
-            />
+            <MetricsCard key={index + 4} title={metric.title} value={metric.value} icon={metric.icon} />
           ))}
         </div>
 
@@ -183,12 +204,7 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-4 text-foreground">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
             {actionButtons.map((button, index) => (
-              <ActionButton
-                key={index}
-                icon={button.icon}
-                label={button.label}
-                onClick={() => navigate(button.path)}
-              />
+              <ActionButton key={index} icon={button.icon} label={button.label} onClick={() => navigate(button.path)} />
             ))}
           </div>
         </div>

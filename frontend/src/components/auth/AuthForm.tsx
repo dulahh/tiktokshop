@@ -48,8 +48,8 @@ useEffect(() => {
     setLoading(true);
 
     const url = isLogin
-      ? "http://195.35.28.13:8000/auth/login"
-      : "http://195.35.28.13:8000/auth/signup";
+      ? "http://localhost:8000/auth/login"
+      : "http://localhost:8000/auth/signup";
 
     const payload = isLogin
       ? { email, password }
@@ -72,11 +72,16 @@ useEffect(() => {
 
       if (isLogin) {
         const token = data.access_token;
-        if (!token) throw new Error("No token received");
-
+        const id = data.user_id;
+        console.log("Login successful, token:", token);
+        if (!token ) throw new Error("No token received");
+        console.log("Token to store:", token);
         localStorage.setItem("auth-token", token);
-        localStorage.setItem("user-email", email);
-        onLogin(token);
+        localStorage.setItem("user_id",id?.toString() ?? "");
+        console.log("Stored token:", localStorage.getItem("auth-token"));
+        // sessionStorage.setItem("auth-token", token);
+        // sessionStorage.setItem("user-email", email);
+        onLogin(token); 
 
         toast({
           title: "Welcome back!",
