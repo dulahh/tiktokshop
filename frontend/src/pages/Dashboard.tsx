@@ -55,7 +55,7 @@ export default function Dashboard() {
   ];
 
   const API_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://tiktokshop-1-i7zg.onrender.com'  // Replace with your actual backend URL
+    ? 'https://tiktokshop-1.onrender.com'  // Replace with your actual backend URL
     : 'http://localhost:8000';
 
   const fetchDashboardData = useCallback(async (isRefresh = false) => {

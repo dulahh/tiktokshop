@@ -32,7 +32,7 @@ export const AuthForm = ({ onLogin }: AuthFormProps) => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:8000';
     }
-    return 'https://tiktokshop-1-i7zg.onrender.com';
+    return 'https://tiktokshop-1.onrender.com';
   };
 
   useEffect(() => {
