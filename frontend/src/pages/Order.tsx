@@ -16,7 +16,7 @@ type OrderResponse = {
   created_at: string;
 };
 
-const API_BASE_URL = "https://iktokshop-1-i7zg.onrender.com"; // use http locally
+const API_BASE_URL = "https://tiktokshop-1-i7zg.onrender.com"; // use http locally
 
 const fmtUSD = (amount: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
