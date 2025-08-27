@@ -65,19 +65,49 @@ def get_current_user(
     
     try:
         SECRET_KEY = os.getenv("SECRET_KEY")
-        # payload = jwt.decode(credentials.token, SECRET_KEY, algorithms=[ALGORITHM])
+        if not SECRET_KEY:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Server configuration error"
+            )
+        
+        # Decode the JWT token
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        print("Decoded payload:", payload)
+        print("Decoded payload:", payload)  # Consider removing in production
+        
+        # Extract username from token subject
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-    except JWTError:
-        print(credentials_exception)
+            
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except jwt.InvalidTokenError:
+        print("Invalid token error")  # Consider logging instead of print
+        raise credentials_exception
+    except Exception as e:
+        print(f"Unexpected error during token validation: {e}")
         raise credentials_exception
     
+    # Query user from database
     user = db.query(User).filter(User.username == username).first()
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Optional: Check if user is active
+    # if not user.is_active:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Inactive user"
+    #     )
+    
     return user
 
 def generate_transaction_id():

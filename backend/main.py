@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional, List
 from utils.pydantic import UserSignup, UserLogin, APIResponse, Token, UserInfo, DashboardData, WithdrawalRequest, WithdrawalResponse, OrderResponse
-from utils.util import get_db, get_current_user, create_access_token, authenticate_user, generate_transaction_id, get_password_hash
+from utils.util import get_db, get_current_user, create_access_token, authenticate_user, generate_transaction_id, get_password_hash, verify_password
 from models.model import User, Dashboard, Withdrawal, Order
 from dotenv import load_dotenv
 import os
@@ -59,12 +59,12 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
             detail="Username or email already registered"
         )
 
-    # Store password as plain text — for testing only
+    # Hash the password before storing
     db_user = User(
         username=user_data.username,
         email=user_data.email,
         phone_number=user_data.phone_number,
-        hashed_password=user_data.password  # <-- Not hashed!
+        hashed_password=get_password_hash(user_data.password)
     )
 
     db.add(db_user)
@@ -78,7 +78,7 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
 
     return APIResponse(
         success=True,
-        message="User registered (with plain password)",
+        message="User registered successfully",
         data={"user_id": db_user.id, "username": db_user.username}
     )
 
@@ -107,7 +107,31 @@ async def login(login_data: UserLogin, db: Session = Depends(get_db)):
         username=user.username,
         email=user.email
     )
+@app.post("/auth/login", response_model=TokenWithUser)
+async def login(login_data: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == login_data.email).first()
 
+    if not user or not verify_password(login_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token_expires = timedelta(minutes=1440)
+    access_token = create_access_token(
+        data={"sub": user.username},
+        expires_delta=access_token_expires
+    )
+
+    return TokenWithUser(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=1440 * 60,
+        user_id=user.id,
+        username=user.username,
+        email=user.email
+    )
 # User Profile Route
 @app.get("/auth/me", response_model=UserInfo)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
