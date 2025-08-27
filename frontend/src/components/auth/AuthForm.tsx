@@ -48,8 +48,8 @@ useEffect(() => {
     setLoading(true);
 
     const url = isLogin
-      ? "http://localhost:8000/auth/login"
-      : "http://localhost:8000/auth/signup";
+      ? "https://iktokshop-1-i7zg.onrender.com/auth/login"
+      : "https://iktokshop-1-i7zg.onrender.com/auth/signup";
 
     const payload = isLogin
       ? { email, password }
