@@ -54,6 +54,10 @@ export default function Dashboard() {
     { icon: Package, label: "Distribution Center", path: "/distribution" },
   ];
 
+  const API_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://your-backend-api.com'  // Replace with your actual backend URL
+    : 'http://localhost:8000';
+
   const fetchDashboardData = useCallback(async (isRefresh = false) => {
     const token = localStorage.getItem("auth-token");
     if (!token) {
@@ -61,9 +65,21 @@ export default function Dashboard() {
       return;
     }
 
-    // JWT expiration check
+    // JWT expiration check with better debugging
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
+      const tokenParts = token.split(".");
+      if (tokenParts.length !== 3) {
+        console.error("Invalid token format");
+        localStorage.removeItem("auth-token");
+        navigate("/login");
+        return;
+      }
+      
+      const payload = JSON.parse(atob(tokenParts[1]));
+      console.log("Token payload:", payload);
+      console.log("Current time:", new Date(Date.now()));
+      console.log("Token expires:", new Date(payload.exp * 1000));
+      
       if (Date.now() >= payload.exp * 1000) {
         console.warn("Token expired, redirecting to login...");
         localStorage.removeItem("auth-token");
@@ -71,7 +87,8 @@ export default function Dashboard() {
         return;
       }
     } catch (err) {
-      console.error("Invalid token, redirecting to login", err);
+      console.error("Token validation error:", err);
+      console.error("Token value:", token);
       localStorage.removeItem("auth-token");
       navigate("/login");
       return;
@@ -82,24 +99,33 @@ export default function Dashboard() {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/dashboard", {
+      console.log("Making API request to:", `${API_URL}/dashboard`);
+      console.log("With token:", token ? `${token.substring(0, 20)}...` : "No token");
+      
+      const res = await fetch(`${API_URL}/dashboard`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
+      console.log("API response status:", res.status);
+      console.log("API response headers:", Object.fromEntries(res.headers.entries()));
+
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          console.warn("Unauthorized, redirecting to login...");
+          console.warn("Unauthorized response, redirecting to login...");
           localStorage.removeItem("auth-token");
           navigate("/login");
           return;
         }
-        throw new Error(`Failed to fetch dashboard: ${res.status}`);
+        const errorText = await res.text();
+        console.error("API error response:", errorText);
+        throw new Error(`Failed to fetch dashboard: ${res.status} - ${errorText}`);
       }
 
       const result: DashboardData = await res.json();
+      console.log("Dashboard data received:", result);
       setData(result);
       localStorage.setItem("dashboard-data", JSON.stringify(result));
       localStorage.setItem("dashboard-timestamp", Date.now().toString());
