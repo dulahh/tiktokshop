@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import {
@@ -12,6 +12,7 @@ import {
   HeadphonesIcon,
   Wallet,
   Package,
+  RefreshCw,
 } from "lucide-react";
 import { MetricsCard } from "@/components/dashboard/MetricsCard";
 import { ActionButton } from "@/components/dashboard/ActionButton";
@@ -37,60 +38,50 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isStale, setIsStale] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-  const token = localStorage.getItem("auth-token");
-  if (!token) {
-    navigate("/login");
-    return;
-  }
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 2,
+    }).format(value);
 
-  // JWT expiration check
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    if (Date.now() >= payload.exp * 1000) {
-      console.warn("Token expired, redirecting to login...");
+  const actionButtons = [
+    { icon: Settings, label: "Shop Settings", path: "/shop-settings" },
+    { icon: HeadphonesIcon, label: "Service", path: "/service" },
+    { icon: Wallet, label: "Withdrawal", path: "/withdrawal" },
+    { icon: Package, label: "Distribution Center", path: "/distribution" },
+  ];
+
+  const fetchDashboardData = useCallback(async (isRefresh = false) => {
+    const token = localStorage.getItem("auth-token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    // JWT expiration check
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (Date.now() >= payload.exp * 1000) {
+        console.warn("Token expired, redirecting to login...");
+        localStorage.removeItem("auth-token");
+        navigate("/login");
+        return;
+      }
+    } catch (err) {
+      console.error("Invalid token, redirecting to login", err);
       localStorage.removeItem("auth-token");
       navigate("/login");
       return;
     }
-  } catch (err) {
-    console.error("Invalid token, redirecting to login", err);
-    localStorage.removeItem("auth-token");
-    navigate("/login");
-    return;
-  }
 
-  const TEN_MINUTES = 10 * 60 * 1000;
-
-  // Load cached data first
-  const cachedData = localStorage.getItem("dashboard-data");
-  const cachedTimestamp = localStorage.getItem("dashboard-timestamp");
-
-  if (cachedData && cachedTimestamp) {
-    try {
-      const parsed = JSON.parse(cachedData);
-      if (parsed && typeof parsed === "object") {
-        setData(parsed);
-        setLoading(false);
-
-        const age = Date.now() - parseInt(cachedTimestamp, 10);
-        if (age > TEN_MINUTES) setIsStale(true);
-      }
-    } catch {
-      // ignore parsing errors
+    if (isRefresh) {
+      setRefreshing(true);
     }
-  }
 
-  // ✅ Fetch fresh dashboard data
-  const fetchData = async () => {
     try {
-      const token = localStorage.getItem("auth-token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       const res = await fetch("http://localhost:8000/dashboard", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -115,14 +106,65 @@ export default function Dashboard() {
       setIsStale(false);
     } catch (err) {
       console.error("Error fetching dashboard:", err);
-      if (!cachedData) setData(null);
     } finally {
       setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      }
     }
+  }, [navigate]);
+
+  const handleRefresh = () => {
+    fetchDashboardData(true);
   };
 
-  fetchData();
-}, [navigate]);
+  useEffect(() => {
+    const token = localStorage.getItem("auth-token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    // JWT expiration check
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (Date.now() >= payload.exp * 1000) {
+        console.warn("Token expired, redirecting to login...");
+        localStorage.removeItem("auth-token");
+        navigate("/login");
+        return;
+      }
+    } catch (err) {
+      console.error("Invalid token, redirecting to login", err);
+      localStorage.removeItem("auth-token");
+      navigate("/login");
+      return;
+    }
+
+    const TEN_MINUTES = 10 * 60 * 1000;
+
+    // Load cached data first
+    const cachedData = localStorage.getItem("dashboard-data");
+    const cachedTimestamp = localStorage.getItem("dashboard-timestamp");
+
+    if (cachedData && cachedTimestamp) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        if (parsed && typeof parsed === "object") {
+          setData(parsed);
+          setLoading(false);
+
+          const age = Date.now() - parseInt(cachedTimestamp, 10);
+          if (age > TEN_MINUTES) setIsStale(true);
+        }
+      } catch {
+        // ignore parsing errors
+      }
+    }
+
+    // Fetch fresh data
+    fetchDashboardData();
+  }, [navigate, fetchDashboardData]);
 
   // Tawk.to chat script
   useEffect(() => {
@@ -136,29 +178,31 @@ export default function Dashboard() {
     script.setAttribute("crossorigin", "*");
 
     document.body.appendChild(script);
-    return () => document.body.removeChild(script);
+    return () => {
+      try {
+        document.body.removeChild(script);
+      } catch (error) {
+        // Script may have already been removed
+      }
+    };
   }, []);
 
-  const actionButtons = [
-    { icon: Settings, label: "Shop Settings", path: "/shop-settings" },
-    { icon: HeadphonesIcon, label: "Service", path: "/service" },
-    { icon: Wallet, label: "Withdrawal", path: "/withdrawal" },
-    { icon: Package, label: "Distribution Center", path: "/distribution" },
-  ];
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 2,
-    }).format(value);
-
-  if (loading) {
+  if (loading && !data) {
     return <div className="p-6 text-center">Loading dashboard...</div>;
   }
 
   if (!data) {
-    return <div className="p-6 text-center text-red-500">Failed to load dashboard.</div>;
+    return (
+      <div className="p-6 text-center">
+        <div className="text-red-500 mb-4">Failed to load dashboard.</div>
+        <button
+          onClick={handleRefresh}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Try Again
+        </button>
+      </div>
+    );
   }
 
   const metrics = [
@@ -176,14 +220,26 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="bg-gradient-primary text-white p-6 pb-8">
-        <div className="flex items-center justify-center p-1 rounded-2xl shadow-lg">
-          <img src={logo} alt="Logo" className="w-36 h-auto" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center flex-1">
+            <div className="p-1 rounded-2xl shadow-lg">
+              <img src={logo} alt="Logo" className="w-36 h-auto" />
+            </div>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="p-2 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50"
+            title="Refresh dashboard"
+          >
+            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-4">
         {isStale && (
-          <div className="text-sm text-yellow-600 mb-2 text-center">
+          <div className="text-sm text-yellow-600 mb-2 text-center bg-yellow-50 p-2 rounded">
             Displaying cached data, may be outdated.
           </div>
         )}
