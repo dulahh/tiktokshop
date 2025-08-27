@@ -61,7 +61,7 @@ export default function Dashboard() {
   const fetchDashboardData = useCallback(async (isRefresh = false) => {
     const token = localStorage.getItem("auth-token");
     if (!token) {
-      navigate("/login");
+      navigate("/");
       return;
     }
 
@@ -71,7 +71,7 @@ export default function Dashboard() {
       if (tokenParts.length !== 3) {
         console.error("Invalid token format");
         localStorage.removeItem("auth-token");
-        navigate("/login");
+        navigate("/");
         return;
       }
       
@@ -83,14 +83,14 @@ export default function Dashboard() {
       if (Date.now() >= payload.exp * 1000) {
         console.warn("Token expired, redirecting to login...");
         localStorage.removeItem("auth-token");
-        navigate("/login");
+        navigate("/");
         return;
       }
     } catch (err) {
       console.error("Token validation error:", err);
       console.error("Token value:", token);
       localStorage.removeItem("auth-token");
-      navigate("/login");
+      navigate("/");
       return;
     }
 
@@ -116,7 +116,7 @@ export default function Dashboard() {
         if (res.status === 401 || res.status === 403) {
           console.warn("Unauthorized response, redirecting to login...");
           localStorage.removeItem("auth-token");
-          navigate("/login");
+          navigate("/");
           return;
         }
         const errorText = await res.text();
@@ -147,7 +147,7 @@ export default function Dashboard() {
   useEffect(() => {
     const token = localStorage.getItem("auth-token");
     if (!token) {
-      navigate("/login");
+      navigate("/");
       return;
     }
 
@@ -157,13 +157,13 @@ export default function Dashboard() {
       if (Date.now() >= payload.exp * 1000) {
         console.warn("Token expired, redirecting to login...");
         localStorage.removeItem("auth-token");
-        navigate("/login");
+        navigate("/");
         return;
       }
     } catch (err) {
       console.error("Invalid token, redirecting to login", err);
       localStorage.removeItem("auth-token");
-      navigate("/login");
+      navigate("/");
       return;
     }
 
