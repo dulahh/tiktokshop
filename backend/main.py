@@ -82,31 +82,31 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
         data={"user_id": db_user.id, "username": db_user.username}
     )
 
-@app.post("/auth/login", response_model=TokenWithUser)
-async def login(login_data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == login_data.email).first()
+# @app.post("/auth/login", response_model=TokenWithUser)
+# async def login(login_data: UserLogin, db: Session = Depends(get_db)):
+#     user = db.query(User).filter(User.email == login_data.email).first()
 
-    if not user or user.hashed_password != login_data.password:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+#     if not user or user.hashed_password != login_data.password:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Incorrect email or password",
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
 
-    access_token_expires = timedelta(minutes=1440)
-    access_token = create_access_token(
-        data={"sub": user.username},
-        expires_delta=access_token_expires
-    )
+#     access_token_expires = timedelta(minutes=1440)
+#     access_token = create_access_token(
+#         data={"sub": user.username},
+#         expires_delta=access_token_expires
+#     )
 
-    return TokenWithUser(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=1440 * 60,
-        user_id=user.id,
-        username=user.username,
-        email=user.email
-    )
+#     return TokenWithUser(
+#         access_token=access_token,
+#         token_type="bearer",
+#         expires_in=1440 * 60,
+#         user_id=user.id,
+#         username=user.username,
+#         email=user.email
+    # )
 @app.post("/auth/login", response_model=TokenWithUser)
 async def login(login_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email).first()
